@@ -1,6 +1,6 @@
-using ChessGame.Core;
-using ChessGame.Enums;
-using ChessGame.Models;
+using ChessConsoleApp.Core;
+using ChessConsoleApp.Enums;
+using ChessConsoleApp.Models;
 
 namespace ChessConsoleApp.AI;
 

@@ -1,5 +1,5 @@
-﻿using ChessConsoleApp.Tests;
-using ChessGame.Core;
+﻿using ChessConsoleApp.Core;
+using ChessConsoleApp.Tests;
 
 namespace ChessConsoleApp;
 

@@ -1,6 +1,6 @@
-using ChessGame.Core;
-using ChessGame.Enums;
-using ChessGame.Models.Pieces;
+using ChessConsoleApp.Core;
+using ChessConsoleApp.Enums;
+using ChessConsoleApp.Models.Pieces;
 using static ChessConsoleApp.Tests.MoveTests.MoveTestHelpers;
 
 namespace ChessConsoleApp.Tests.MoveTests;

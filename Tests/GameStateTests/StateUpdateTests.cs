@@ -1,5 +1,5 @@
-using ChessGame.Enums;
-using ChessGame.Models.Pieces;
+using ChessConsoleApp.Enums;
+using ChessConsoleApp.Models.Pieces;
 using static ChessConsoleApp.Tests.GameStateTests.GameStateTestHelpers;
 
 namespace ChessConsoleApp.Tests.GameStateTests;

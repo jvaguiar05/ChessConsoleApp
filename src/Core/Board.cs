@@ -1,8 +1,8 @@
-using ChessGame.Enums;
-using ChessGame.Models;
-using ChessGame.Models.Pieces;
+using ChessConsoleApp.Enums;
+using ChessConsoleApp.Models;
+using ChessConsoleApp.Models.Pieces;
 
-namespace ChessGame.Core;
+namespace ChessConsoleApp.Core;
 
 public class Board
 {
@@ -54,9 +54,7 @@ public class Board
             {
                 Piece? piece = _squares[r, c];
                 if (piece is King && piece.Color == kingColor)
-                {
                     return new Position(r, c);
-                }
             }
         }
         throw new InvalidOperationException(
@@ -76,13 +74,9 @@ public class Board
             {
                 Piece? piece = _squares[r, c];
                 if (piece != null && piece.Color != kingColor)
-                {
                     // Can this specific enemy piece legally strike the King?
                     if (piece.IsValidMove(this, kingPos, lastMove))
-                    {
                         return true;
-                    }
-                }
             }
         }
         return false;

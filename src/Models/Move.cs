@@ -1,6 +1,6 @@
-using ChessGame.Models.Pieces;
+using ChessConsoleApp.Models.Pieces;
 
-namespace ChessGame.Models;
+namespace ChessConsoleApp.Models;
 
 public readonly struct Move(
     Position from,

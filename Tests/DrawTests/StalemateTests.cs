@@ -1,7 +1,7 @@
-using ChessGame.Core;
-using ChessGame.Enums;
-using ChessGame.Models;
-using ChessGame.Models.Pieces;
+using ChessConsoleApp.Core;
+using ChessConsoleApp.Enums;
+using ChessConsoleApp.Models;
+using ChessConsoleApp.Models.Pieces;
 
 namespace ChessConsoleApp.Tests.DrawTests;
 

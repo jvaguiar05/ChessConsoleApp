@@ -1,4 +1,4 @@
-using ChessGame.Models;
+using ChessConsoleApp.Models;
 
 namespace ChessConsoleApp.Tests.NotationTests;
 

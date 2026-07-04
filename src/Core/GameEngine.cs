@@ -1,10 +1,10 @@
 using ChessConsoleApp.AI;
+using ChessConsoleApp.Enums;
+using ChessConsoleApp.Models;
+using ChessConsoleApp.Models.Pieces;
 using ChessConsoleApp.UI;
-using ChessGame.Enums;
-using ChessGame.Models;
-using ChessGame.Models.Pieces;
 
-namespace ChessGame.Core;
+namespace ChessConsoleApp.Core;
 
 public class GameEngine
 {

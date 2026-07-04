@@ -1,4 +1,4 @@
-namespace ChessGame.Models;
+namespace ChessConsoleApp.Models;
 
 public readonly struct Position(int row, int column)
 {

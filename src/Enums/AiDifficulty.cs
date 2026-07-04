@@ -1,4 +1,4 @@
-namespace ChessGame.Enums;
+namespace ChessConsoleApp.Enums;
 
 public enum AiDifficulty
 {

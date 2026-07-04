@@ -1,5 +1,5 @@
-using ChessGame.Core;
-using ChessGame.Enums;
+using ChessConsoleApp.Core;
+using ChessConsoleApp.Enums;
 
 namespace ChessConsoleApp.Tests.DrawTests;
 

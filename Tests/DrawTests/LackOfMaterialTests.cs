@@ -1,6 +1,7 @@
-using ChessGame.Enums;
-using ChessGame.Models;
-using ChessGame.Models.Pieces;
+using ChessConsoleApp.Core;
+using ChessConsoleApp.Enums;
+using ChessConsoleApp.Models;
+using ChessConsoleApp.Models.Pieces;
 
 namespace ChessConsoleApp.Tests.DrawTests;
 
@@ -164,7 +165,7 @@ public static class LackOfMaterialTests
 
     public static bool StartingPosition_ShouldNotBeDrawByInsufficientMaterial()
     {
-        var engine = new ChessGame.Core.GameEngine();
+        var engine = new GameEngine();
 
         return DrawTestHelpers.ExpectNotState(
             engine.EvaluateGameStateForTesting(),

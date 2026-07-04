@@ -1,7 +1,7 @@
-using ChessGame.Core;
-using ChessGame.Enums;
+using ChessConsoleApp.Core;
+using ChessConsoleApp.Enums;
 
-namespace ChessGame.Models.Pieces;
+namespace ChessConsoleApp.Models.Pieces;
 
 public class Bishop(PieceColor color, Position position) : Piece(color, position)
 {
