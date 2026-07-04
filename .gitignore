@@ -1,0 +1,34 @@
+## Build outputs and artifacts
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+*.msi
+*.msix
+*.msm
+*.msp
+
+## Visual Studio & Rider tracking folders
+.vs/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+## VS Code workspace configurations
+.vscode/
+!.vscode/extensions.json
+
+## Secrets and local configurations
+*.secrets.json
+appsettings.Development.json
+appsettings.Local.json
+
+## NuGet Packages
+*.nupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+
+## Operating System overhead
+Thumbs.db
+.DS_Store
