@@ -9,6 +9,7 @@ namespace ChessConsoleApp.Core;
 public class GameEngine
 {
     private readonly GameSession _session = new();
+    private readonly GameStateEvaluator _gameStateEvaluator;
     private bool _isVsAI = false;
     private PieceColor _playerColor = PieceColor.White;
     private AiDifficulty _aiDifficulty = AiDifficulty.Intermediate;
@@ -20,6 +21,8 @@ public class GameEngine
 
     public GameEngine()
     {
+        _gameStateEvaluator = new GameStateEvaluator(IsMoveLegal);
+
         _session.Initialize();
 
         PositionSnapshotService.RegisterCurrentPosition(_session);
@@ -33,12 +36,12 @@ public class GameEngine
         while (_session.State == GameState.Running)
         {
             ConsoleRenderer.RenderBoard(_session.Board, _session.MoveHistory);
-            EvaluateGameState();
+            _gameStateEvaluator.Evaluate(_session);
 
             if (_session.State != GameState.Running)
                 continue;
 
-            Move? lastMove = _session.MoveHistory.Count > 0 ? _session.MoveHistory[^1] : null;
+            Move? lastMove = _session.LastMove;
 
             if (_session.Board.IsColorInCheck(_session.CurrentTurn, lastMove))
                 Console.WriteLine($"[!] ALERT: {_session.CurrentTurn} is currently in CHECK!");
@@ -427,36 +430,6 @@ public class GameEngine
         }
     }
 
-    private GameState EvaluateGameState()
-    {
-        Move? lastMove = _session.MoveHistory.Count > 0 ? _session.MoveHistory[^1] : null;
-
-        if (_session.HalfMoveClock >= 100)
-            return _session.State = GameState.DrawByFiftyMoveRule;
-
-        string currentSnapshot = PositionSnapshotService.Generate(_session);
-        if (
-            _session.PositionHistory.TryGetValue(currentSnapshot, out int repCount)
-            && repCount >= 3
-        )
-            return _session.State = GameState.DrawByRepetition;
-
-        if (_session.Board.HasInsufficientMaterial())
-            return _session.State = GameState.DrawByInsufficientMaterial;
-
-        bool inCheck = _session.Board.IsColorInCheck(_session.CurrentTurn, lastMove);
-        bool hasMoves = _session.Board.HasAnyLegalMoves(
-            _session.CurrentTurn,
-            lastMove,
-            IsMoveLegal
-        );
-
-        if (!hasMoves)
-            return _session.State = inCheck ? GameState.Checkmate : GameState.Stalemate;
-
-        return _session.State;
-    }
-
     private static Piece CreatePromotionPiece(char choice, PieceColor color, Position position)
     {
         return char.ToUpper(choice) switch
@@ -482,14 +455,14 @@ public class GameEngine
     public GameState TestMoveInput(string input)
     {
         ProcessMoveInput(input.Trim().ToLower());
-        return EvaluateGameState();
+        return _gameStateEvaluator.Evaluate(_session);
     }
+
+    public GameState EvaluateGameStateForTesting() => _gameStateEvaluator.Evaluate(_session);
 
     public void SetHalfMoveClockForTesting(int value) => _session.HalfMoveClock = value;
 
     public Board BoardForTesting => _session.Board;
-
-    public GameState EvaluateGameStateForTesting() => EvaluateGameState();
 
     public void SetCurrentTurnForTesting(PieceColor color) => _session.CurrentTurn = color;
 
