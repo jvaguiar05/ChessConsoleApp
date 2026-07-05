@@ -3,7 +3,6 @@ using ChessConsoleApp.Core.Moves;
 using ChessConsoleApp.Core.State;
 using ChessConsoleApp.Enums;
 using ChessConsoleApp.Models;
-using ChessConsoleApp.Models.Pieces;
 using ChessConsoleApp.UI;
 
 namespace ChessConsoleApp.Core;
@@ -34,9 +33,6 @@ public class GameEngine
         PositionSnapshotService.RegisterCurrentPosition(_session);
     }
 
-    /// <summary>
-    /// Coordinates the main state-machine driven game loop.
-    /// </summary>
     public void Start()
     {
         while (_session.State == GameState.Running)
@@ -99,9 +95,7 @@ public class GameEngine
                 Start();
             }
             else if (option == MainMenuOption.Exit)
-            {
                 return;
-            }
         }
     }
 
@@ -188,7 +182,7 @@ public class GameEngine
 #if DEBUG
         if (_promotionChoiceForTesting.HasValue)
         {
-            _session.Board[position] = CreatePromotionPiece(
+            _session.Board[position] = PromotionPieceFactory.Create(
                 _promotionChoiceForTesting.Value,
                 color,
                 position
@@ -198,29 +192,9 @@ public class GameEngine
         }
 #endif
 
-        Console.WriteLine(
-            $"\nPawn Promotion! Choose a piece for {color} (Q = Queen, R = Rook, B = Bishop, N = Knight):"
-        );
+        char choice = PromotionPrompt.AskPromotionChoice(color);
 
-        while (true)
-        {
-            string choice = Console.ReadLine()?.Trim().ToUpper() ?? "Q";
-
-            _session.Board[position] = CreatePromotionPiece(choice[0], color, position);
-
-            break;
-        }
-    }
-
-    private static Piece CreatePromotionPiece(char choice, PieceColor color, Position position)
-    {
-        return char.ToUpper(choice) switch
-        {
-            'R' => new Rook(color, position),
-            'B' => new Bishop(color, position),
-            'N' => new Knight(color, position),
-            _ => new Queen(color, position),
-        };
+        _session.Board[position] = PromotionPieceFactory.Create(choice, color, position);
     }
 
     private void WriteDiagnostic(string message)
