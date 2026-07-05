@@ -3,7 +3,7 @@ using ChessConsoleApp.Enums;
 using ChessConsoleApp.Models;
 using ChessConsoleApp.Models.Pieces;
 
-namespace ChessConsoleApp.Core;
+namespace ChessConsoleApp.Core.State;
 
 public sealed class PositionSnapshotService
 {

@@ -1,4 +1,6 @@
 using ChessConsoleApp.AI;
+using ChessConsoleApp.Core.Moves;
+using ChessConsoleApp.Core.State;
 using ChessConsoleApp.Enums;
 using ChessConsoleApp.Models;
 using ChessConsoleApp.Models.Pieces;
@@ -10,6 +12,7 @@ public class GameEngine
 {
     private readonly GameSession _session = new();
     private readonly MoveValidator _moveValidator = new();
+    private readonly MoveExecutor _moveExecutor;
     private readonly GameStateEvaluator _gameStateEvaluator;
     private bool _isVsAI = false;
     private PieceColor _playerColor = PieceColor.White;
@@ -22,6 +25,7 @@ public class GameEngine
 
     public GameEngine()
     {
+        _moveExecutor = new MoveExecutor(_moveValidator);
         _gameStateEvaluator = new GameStateEvaluator(IsMoveLegal);
 
         _session.Initialize();
@@ -242,29 +246,16 @@ public class GameEngine
 
     private bool ExecuteMove(Position from, Position to)
     {
-        MoveValidationResult validation = _moveValidator.Validate(_session, from, to);
+        MoveExecutionResult result = _moveExecutor.Execute(_session, from, to);
 
-        if (!validation.IsLegal)
+        if (!result.Succeeded)
         {
-            WriteDiagnostic(validation.ErrorMessage ?? "Invalid move.");
+            WriteDiagnostic(result.ErrorMessage ?? "Invalid move.");
             return false;
         }
 
-        Piece piece = validation.MovingPiece!;
-
-        _session.MoveHistory.Add(new Move(from, to, piece, validation.CapturedPiece));
-        _session.Board.MovePiece(from, to);
-
-        if (piece is Pawn || validation.CapturedPiece != null)
-            _session.HalfMoveClock = 0;
-        else
-            _session.HalfMoveClock++;
-
-        if (validation.IsCastling && validation.CastlingRook != null)
-            _session.Board.MovePiece(validation.RookStartPosition, validation.RookTransitPosition);
-
-        if (piece is Pawn && (to.Row == 0 || to.Row == 7))
-            HandlePromotion(to, piece.Color);
+        if (result.RequiresPromotion && result.MovedPiece != null)
+            HandlePromotion(result.PromotionPosition, result.MovedPiece.Color);
 
         return true;
     }

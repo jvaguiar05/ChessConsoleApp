@@ -1,7 +1,7 @@
 using ChessConsoleApp.Enums;
 using ChessConsoleApp.Models;
 
-namespace ChessConsoleApp.Core;
+namespace ChessConsoleApp.Core.State;
 
 public sealed class GameStateEvaluator(Func<Position, Position, bool> isMoveLegal)
 {
