@@ -14,6 +14,7 @@ public class GameEngine
     private readonly GameMenu _gameMenu = new();
     private readonly MoveExecutor _moveExecutor;
     private readonly GameStateEvaluator _gameStateEvaluator;
+    private readonly StockfishChessAi _stockfishAi = new();
     private bool _isVsAI = false;
     private PieceColor _playerColor = PieceColor.White;
     private AiDifficulty _aiDifficulty = AiDifficulty.Intermediate;
@@ -152,25 +153,15 @@ public class GameEngine
     private void ExecuteAiTurn()
     {
         Console.WriteLine($"\n[CPU] Computer ({_session.CurrentTurn}) is thinking...");
-        System.Threading.Thread.Sleep(800);
 
-        // Call out to the AI layer using clean out parameters
         if (
-            ChessAi.GetBestMove(
-                _session.Board,
-                _session.CurrentTurn,
-                _aiDifficulty,
-                IsMoveLegal,
-                out Position from,
-                out Position to
-            )
+            _stockfishAi.TryGetBestMove(_session, _aiDifficulty, out Position from, out Position to)
         )
         {
             string inputFormat = $"{from} {to}";
             ProcessMoveInput(inputFormat);
         }
         else
-            // Fallback safety barrier in case the AI has zero legal moves (Checkmate/Stalemate)
             WriteDiagnostic("[CPU] No legal moves available for AI.");
     }
 

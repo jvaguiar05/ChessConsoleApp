@@ -46,10 +46,10 @@ public sealed class GameMenu
             Console.WriteLine("       SELECT COMPUTER DIFFICULTY       ");
             Console.WriteLine("========================================");
             Console.WriteLine(" 1. Beginner     (600 Elo)");
-            Console.WriteLine(" 2. Intermediate (1200 Elo)");
-            Console.WriteLine(" 3. Advanced     (1600 Elo)");
-            Console.WriteLine(" 4. Master       (2000 Elo)");
-            Console.WriteLine(" 5. Grandmaster  (2500+ Elo)");
+            Console.WriteLine(" 2. Intermediate (1600 Elo)");
+            Console.WriteLine(" 3. Advanced     (2000 Elo)");
+            Console.WriteLine(" 4. Master       (2400 Elo)");
+            Console.WriteLine(" 5. Grandmaster  (2700+ Elo)");
             Console.Write("\nSelect your opponent: ");
 
             string choice = Console.ReadLine() ?? "";
