@@ -1,59 +1,61 @@
 # ♟️ Console Chess Engine & Game
 
-A fully playable chess game built entirely in C# as a lightweight **.NET 10 console application**.
+A fully playable chess game built in C# as a lightweight **.NET 10 console application**.
 
-This project was created as both a functional chess game and an educational exercise for practicing modern C#, object-oriented design, game state management, chess rule implementation, AI search, and custom unit testing infrastructure.
+This project was created as both a functional chess game and an educational exercise for practicing modern C#, object-oriented design, chess rule implementation, game state management, console UI design, external engine integration, and custom testing infrastructure.
 
-The game features a terminal-based presentation layer, local pass-and-play mode, player vs computer mode, live match information, special chess rules, draw condition validation, and a self-contained AI opponent powered by Minimax search with Alpha-Beta pruning.
+The game features a terminal-based presentation layer, local pass-and-play mode, player vs computer mode powered by **Stockfish**, live match information, special chess rules, draw condition validation, and a custom lightweight test runner.
 
 ---
 
 ## 🚀 Features
 
-### ♟️ Core Game Engine
+### ♟️ Core Game Logic
 
-* **Chess Rule Support:** Implements standard chess movement rules, including special moves and game-ending states.
-* **Special Moves:** Supports Castling, En Passant, and Pawn Promotion.
+* **Standard Chess Rules:** Implements legal chess movement rules for all pieces.
+* **Special Moves:** Supports castling, en passant, and pawn promotion.
 * **Check Detection:** Detects when a king is currently in check.
 * **Checkmate & Stalemate:** Evaluates whether the active player has any legal moves remaining.
 * **Move History:** Tracks played moves and uses historical information for rule validation.
 * **Turn Management:** Maintains the current player turn and prevents illegal out-of-turn moves.
+* **Draw Conditions:** Supports Fifty-Move Rule, Threefold Repetition, and Insufficient Material detection.
 
-### 🤝 Draw Conditions
-
-The engine includes validation for multiple draw scenarios:
-
-* **Fifty-Move Rule:** Detects when no pawn move or capture has occurred within the required move window.
-* **Threefold Repetition:** Uses position snapshots to identify repeated board states.
-* **Insufficient Material:** Detects common layouts where neither side has enough material to force checkmate.
-
-### 🖥️ Presentation Layer (`src/UI/`)
+### 🖥️ Console UI
 
 * **Console Board Rendering:** Displays the current board state directly in the terminal.
 * **Dynamic Sidebar Dashboard:** Shows captured pieces using Unicode chess symbols.
 * **Live Material Evaluation:** Displays material advantage during the match.
 * **Input Parsing:** Converts player commands like `e2 e4` into board positions.
-* **Resignation Support:** Allows the player to type `quit` to resign and return to the main menu.
+* **Main Menu:** Supports local play, player vs computer, and application exit.
+* **Resignation Support:** Allows the player to type `quit` to resign.
 
-### 🤖 Artificial Intelligence Layer (`src/AI/`)
+### 🤖 Stockfish Integration
 
-* **Minimax Search:** Evaluates future move sequences through a decision tree.
-* **Alpha-Beta Pruning:** Skips branches that cannot improve the current result.
-* **Piece-Square Tables:** Adds positional awareness to the AI evaluation.
-* **Material Evaluation:** Scores board positions based on remaining pieces.
-* **Difficulty Tiers:** Adjusts search depth and behavior depending on selected difficulty.
+Player vs computer mode is powered by **Stockfish**, connected through the **UCI** protocol.
 
-#### AI Difficulty Tiers
+The project does not use a custom Minimax AI anymore. Instead, the application:
 
-| Difficulty   | Search Depth | Behavior                                 |
-| ------------ | -----------: | ---------------------------------------- |
-| Beginner     |        1 ply | Basic play with a planned blunder chance |
-| Intermediate |        3 ply | Casual tactical play                     |
-| Advanced     |        4 ply | Stronger tactical search                 |
-| Master       |        5 ply | Deeper calculation                       |
-| Grandmaster  |        6 ply | Most demanding search mode               |
+1. Converts the current internal game state into FEN.
+2. Sends that FEN position to Stockfish.
+3. Requests a best move using UCI commands.
+4. Parses the returned UCI move.
+5. Executes the move through the project’s own move validation and execution pipeline.
 
-> The AI is intentionally implemented inside the project instead of relying on an external chess engine. This keeps the project useful for studying board evaluation, Minimax, Alpha-Beta pruning, and chess engine architecture.
+This keeps the project responsible for its own game rules and board state while delegating computer move selection to a real chess engine.
+
+### AI Difficulty Tiers
+
+Difficulty is controlled by Stockfish strength configuration and move time.
+
+| Difficulty   | Intended Feel              |
+| ------------ | -------------------------- |
+| Beginner     | Very easy / fast responses |
+| Intermediate | Casual chess opponent      |
+| Advanced     | Solid tactical opponent    |
+| Master       | Hard but beatable          |
+| Grandmaster  | Very hard Stockfish play   |
+
+Exact strength may vary depending on the Stockfish version and local machine performance.
 
 ---
 
@@ -65,10 +67,11 @@ This project uses a custom lightweight test runner instead of xUnit, NUnit, or M
 
 The goal is educational: the testing infrastructure was built manually to better understand how test suites, assertions, result aggregation, and test execution work under the hood.
 
-The test suite covers critical parts of the chess engine, including:
+The test suite covers critical parts of the chess application, including:
 
 * **Board Tests:** Validate board initialization, piece placement, board queries, and movement behavior.
 * **Draw Tests:** Validate Fifty-Move Rule, Threefold Repetition, and Insufficient Material scenarios.
+* **Engine Tests:** Validate FEN conversion and Stockfish-supporting engine utilities.
 * **Game State Tests:** Validate checkmate, stalemate, and game state transitions.
 * **Move Tests:** Validate move representation and movement-related behavior.
 * **Notation Tests:** Validate input parsing and algebraic coordinate conversion.
@@ -86,37 +89,61 @@ dotnet run --project ChessConsoleApp.csproj -- --run-tests
 ```text
 ChessConsoleApp/
 │
+├── engines/
+│   └── stockfish/
+│       ├── .gitkeep
+│       ├── README
+│       └── stockfish.exe          # Local dependency, not committed to the repository
+│
 ├── src/
 │   │
-│   ├── AI/                         # --- Artificial Intelligence Layer ---
-│   │   ├── ChessAi.cs              # Minimax search, Alpha-Beta pruning, and difficulty behavior
-│   │   └── BoardEvaluator.cs       # Material evaluation and Piece-Square Tables
+│   ├── Core/                      # Core game orchestration and state management
+│   │   ├── GameEngine.cs
+│   │   ├── GameSession.cs
+│   │   │
+│   │   ├── Moves/                 # Move validation, execution, and promotion handling
+│   │   │   ├── MoveValidator.cs
+│   │   │   ├── MoveExecutor.cs
+│   │   │   ├── MoveValidationResult.cs
+│   │   │   ├── MoveExecutionResult.cs
+│   │   │   └── PromotionPieceFactory.cs
+│   │   │
+│   │   └── State/                 # Game state evaluation and position tracking
+│   │       ├── GameStateEvaluator.cs
+│   │       └── PositionSnapshotService.cs
 │   │
-│   ├── Core/                       # --- Core Game Logic ---
-│   │   ├── Board.cs                # Board representation, indexing, movement, and board queries
-│   │   └── GameEngine.cs           # Main game orchestration and state-machine flow
+│   ├── Engine/                    # Stockfish integration and chess engine adapter layer
+│   │   ├── FenConverter.cs
+│   │   ├── StockfishOptions.cs
+│   │   ├── StockfishUciClient.cs
+│   │   └── StockfishChessAi.cs
 │   │
-│   ├── Enums/                      # GameState, PieceColor, and AiDifficulty configurations
+│   ├── Enums/                     # GameState, PieceColor, AiDifficulty, and related enums
 │   │
-│   ├── Models/                     # Position, Move, and chess piece models
-│   │   └── Pieces/                 # Individual piece entities and movement rules
+│   ├── Models/                    # Board, Position, Move, and chess piece models
+│   │   └── Pieces/                # Individual chess piece entities and movement rules
 │   │
-│   ├── UI/                         # --- Presentation Layer ---
-│   │   ├── ConsoleRenderer.cs      # Board drawing, Unicode sidebar, and material display
-│   │   └── InputParser.cs          # Converts commands like "e2 e4" into board positions
+│   ├── UI/                        # Console presentation and user input layer
+│   │   ├── ConsoleRenderer.cs
+│   │   ├── EndGameRenderer.cs
+│   │   ├── GameMenu.cs
+│   │   ├── InputParser.cs
+│   │   └── PromotionPrompt.cs
 │   │
-│   └── Program.cs                  # Application entry point
+│   └── Program.cs                 # Application entry point
 │
 ├── Tests/
 │   │
-│   ├── BoardTests/                 # Unit tests for board behavior and move validation
-│   ├── DrawTests/                  # Unit tests for draw conditions
-│   ├── GameStateTests/             # Unit tests for checkmate, stalemate, and state transitions
-│   ├── MoveTests/                  # Unit tests for move representation
-│   ├── NotationTests/              # Unit tests for input parsing and algebraic coordinates
-│   └── TestSuite.cs                # Central test runner for executing all test suites
+│   ├── BoardTests/                # Validate board initialization, piece placement, and movement behavior
+│   ├── DrawTests/                 # Validate draw conditions: Fifty-Move Rule, Threefold Repetition, Insufficient Material
+│   ├── EngineTests/               # Validate FEN conversion and Stockfish-supporting engine utilities
+│   ├── GameStateTests/            # Validate checkmate, stalemate, and game state transitions
+│   ├── MoveTests/                 # Validate move representation and movement-related behavior
+│   ├── NotationTests/             # Validate input parsing and algebraic coordinate conversion
+│   └── TestSuite.cs               # Aggregate test runner for all test categories
 │
 ├── ChessConsoleApp.csproj
+├── .gitignore
 └── README.md
 ```
 
@@ -127,8 +154,33 @@ ChessConsoleApp/
 ### Prerequisites
 
 * **.NET 10 SDK**
+* **Stockfish executable**
 
 This project intentionally targets **.NET 10** because one of its goals is to practice and get comfortable with newer versions of the .NET platform after working with previous versions such as .NET 6 and .NET 8.
+
+Player vs computer mode requires a local Stockfish executable. The expected path is:
+
+```text
+engines/stockfish/stockfish.exe
+```
+
+The Stockfish executable itself is not committed to the repository.
+
+To configure it:
+
+1. Download a Stockfish build for your operating system.
+2. Rename the executable to stockfish.exe.
+3. Place it inside engines/stockfish/.
+
+The final structure should look like this:
+
+```text
+engines/
+└── stockfish/
+    ├── .gitkeep
+    ├── README
+    └── stockfish.exe
+```
 
 ---
 
@@ -209,13 +261,14 @@ The game will declare the opponent as the winner and return safely to the main m
 
 The project is still evolving. Current architectural priorities include:
 
-* Reducing the responsibilities currently concentrated in `GameEngine`.
-* Separating game orchestration from move validation and move execution.
-* Making board simulation safer for AI search.
+* Keeping the Stockfish integration stable and isolated from core chess rules.
+* Improving difficulty tuning so each AI level feels meaningfully different.
+* Expanding UCI move parsing coverage for advanced edge cases.
+* Keeping the console UI clean as the engine layer grows.
 * Keeping project documentation synchronized with the actual code structure.
 * Preserving the custom test infrastructure while improving the core design.
 
-The goal is not only to make the chess game work, but to make the engine easier to reason about, test, refactor, and extend.
+The goal is not only to make the chess game work, but to make the codebase easier to reason about, test, refactor, and extend.
 
 ---
 
@@ -223,15 +276,15 @@ The goal is not only to make the chess game work, but to make the engine easier 
 
 Potential future improvements include:
 
-* Extracting move validation into a dedicated component.
-* Extracting move execution into a dedicated component.
-* Introducing a dedicated game state model.
-* Improving AI board simulation.
-* Improving AI evaluation.
-* Adding stronger search optimizations.
+* Improving AI difficulty balancing.
+* Adding stronger fallback/error messages when Stockfish is missing.
+* Supporting configurable Stockfish paths.
+* Expanding UCI move parsing coverage for advanced edge cases.
 * Adding PGN-style move history.
 * Adding save/load support.
+* Adding undo/redo support.
 * Optionally adding an xUnit test project later for comparison with the custom test runner.
+* Improving packaging so Stockfish setup is clearer for end users.
 
 ---
 
