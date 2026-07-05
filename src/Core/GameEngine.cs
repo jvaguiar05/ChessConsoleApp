@@ -9,6 +9,7 @@ namespace ChessConsoleApp.Core;
 public class GameEngine
 {
     private readonly GameSession _session = new();
+    private readonly MoveValidator _moveValidator = new();
     private readonly GameStateEvaluator _gameStateEvaluator;
     private bool _isVsAI = false;
     private PieceColor _playerColor = PieceColor.White;
@@ -241,47 +242,26 @@ public class GameEngine
 
     private bool ExecuteMove(Position from, Position to)
     {
-        Piece? piece = _session.Board[from];
+        MoveValidationResult validation = _moveValidator.Validate(_session, from, to);
 
-        if (piece == null)
+        if (!validation.IsLegal)
         {
-            WriteDiagnostic("Selection error: No piece exists at the specified source coordinate.");
+            WriteDiagnostic(validation.ErrorMessage ?? "Invalid move.");
             return false;
         }
 
-        if (piece.Color != _session.CurrentTurn)
-        {
-            WriteDiagnostic($"Turn error: It is currently {_session.CurrentTurn}'s turn.");
-            return false;
-        }
+        Piece piece = validation.MovingPiece!;
 
-        if (
-            !EvaluateMoveLegality(
-                from,
-                to,
-                out bool isEnPassant,
-                out Piece? targetCaptured,
-                out bool isCastling,
-                out Position rookStartPos,
-                out Position rookTransitPos,
-                out Piece? castlingRook
-            )
-        )
-        {
-            WriteDiagnostic($"Movement error: Invalid rule trajectory for {piece.GetType().Name}.");
-            return false;
-        }
-
-        _session.MoveHistory.Add(new Move(from, to, piece, targetCaptured));
+        _session.MoveHistory.Add(new Move(from, to, piece, validation.CapturedPiece));
         _session.Board.MovePiece(from, to);
 
-        if (piece is Pawn || targetCaptured != null)
+        if (piece is Pawn || validation.CapturedPiece != null)
             _session.HalfMoveClock = 0;
         else
             _session.HalfMoveClock++;
 
-        if (isCastling && castlingRook != null)
-            _session.Board.MovePiece(rookStartPos, rookTransitPos);
+        if (validation.IsCastling && validation.CastlingRook != null)
+            _session.Board.MovePiece(validation.RookStartPosition, validation.RookTransitPosition);
 
         if (piece is Pawn && (to.Row == 0 || to.Row == 7))
             HandlePromotion(to, piece.Color);
@@ -315,91 +295,7 @@ public class GameEngine
     }
 
     private bool IsMoveLegal(Position from, Position to) =>
-        EvaluateMoveLegality(from, to, out _, out _, out _, out _, out _, out _);
-
-    private bool EvaluateMoveLegality(
-        Position from,
-        Position to,
-        out bool isEnPassant,
-        out Piece? targetCaptured,
-        out bool isCastling,
-        out Position rookStartPos,
-        out Position rookTransitPos,
-        out Piece? castlingRook
-    )
-    {
-        targetCaptured = _session.Board[to];
-        isEnPassant = false;
-        isCastling = false;
-        rookStartPos = default;
-        rookTransitPos = default;
-        castlingRook = null;
-
-        Piece? piece = _session.Board[from];
-        if (piece == null || piece.Color != _session.CurrentTurn)
-            return false;
-
-        Move? lastMove = _session.MoveHistory.Count > 0 ? _session.MoveHistory[^1] : null;
-        if (!piece.IsValidMove(_session.Board, to, lastMove))
-            return false;
-
-        isEnPassant = piece is Pawn && from.Column != to.Column && targetCaptured == null;
-        Position enPassantVictimPos = new Position(from.Row, to.Column);
-        Piece? enPassantVictim = isEnPassant ? _session.Board[enPassantVictimPos] : null;
-        if (isEnPassant)
-            targetCaptured = enPassantVictim;
-
-        isCastling = piece is King && Math.Abs(from.Column - to.Column) == 2;
-
-        if (isCastling)
-        {
-            if (
-                piece.HasMoved(_session.MoveHistory)
-                || _session.Board.IsColorInCheck(_session.CurrentTurn, lastMove)
-            )
-                return false;
-
-            int rookStartCol = to.Column == 6 ? 7 : 0;
-            int rookTransitCol = to.Column == 6 ? 5 : 3;
-            rookStartPos = new Position(from.Row, rookStartCol);
-            rookTransitPos = new Position(from.Row, rookTransitCol);
-            castlingRook = _session.Board[rookStartPos];
-
-            if (castlingRook == null || castlingRook.HasMoved(_session.MoveHistory))
-                return false;
-
-            int step = to.Column == 6 ? 1 : -1;
-            Position transitPos = new Position(from.Row, from.Column + step);
-            _session.Board[transitPos] = piece;
-            _session.Board[from] = null;
-            piece.SetPosition(transitPos);
-
-            bool transitInCheck = _session.Board.IsColorInCheck(_session.CurrentTurn, lastMove);
-
-            _session.Board[from] = piece;
-            _session.Board[transitPos] = null;
-            piece.SetPosition(from);
-
-            if (transitInCheck)
-                return false;
-        }
-
-        _session.Board[to] = piece;
-        _session.Board[from] = null;
-        piece.SetPosition(to);
-        if (isEnPassant)
-            _session.Board[enPassantVictimPos] = null;
-
-        bool selfInCheck = _session.Board.IsColorInCheck(_session.CurrentTurn, lastMove);
-
-        _session.Board[from] = piece;
-        _session.Board[to] = isEnPassant ? null : targetCaptured;
-        piece.SetPosition(from);
-        if (isEnPassant)
-            _session.Board[enPassantVictimPos] = enPassantVictim;
-
-        return !selfInCheck;
-    }
+        _moveValidator.IsLegal(_session, from, to);
 
     private void HandlePromotion(Position position, PieceColor color)
     {
