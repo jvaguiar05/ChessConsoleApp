@@ -74,11 +74,11 @@ public sealed class StockfishChessAi(StockfishUciClient client) : IDisposable
         return difficulty switch
         {
             AiDifficulty.Beginner => 1320,
-            AiDifficulty.Intermediate => 1600,
-            AiDifficulty.Advanced => 2000,
-            AiDifficulty.Master => 2400,
-            AiDifficulty.Grandmaster => 3000,
-            _ => 1600,
+            AiDifficulty.Intermediate => 1500,
+            AiDifficulty.Advanced => 1800,
+            AiDifficulty.Master => 2200,
+            AiDifficulty.Grandmaster => 3200,
+            _ => 1500,
         };
     }
 
@@ -86,12 +86,12 @@ public sealed class StockfishChessAi(StockfishUciClient client) : IDisposable
     {
         return difficulty switch
         {
-            AiDifficulty.Beginner => 100,
-            AiDifficulty.Intermediate => 300,
-            AiDifficulty.Advanced => 700,
+            AiDifficulty.Beginner => 25,
+            AiDifficulty.Intermediate => 150,
+            AiDifficulty.Advanced => 500,
             AiDifficulty.Master => 1200,
-            AiDifficulty.Grandmaster => 2000,
-            _ => 300,
+            AiDifficulty.Grandmaster => 5000,
+            _ => 150,
         };
     }
 
