@@ -1,5 +1,6 @@
 using ChessConsoleApp.Tests.BoardTests;
 using ChessConsoleApp.Tests.DrawTests;
+using ChessConsoleApp.Tests.EngineTests;
 using ChessConsoleApp.Tests.GameStateTests;
 using ChessConsoleApp.Tests.MoveTests;
 using ChessConsoleApp.Tests.NotationTests;
@@ -17,6 +18,7 @@ public static class TestSuite
         allPassed &= BoardTestSuite.RunAll();
         allPassed &= MoveTestSuite.RunAll();
         allPassed &= GameStateTestSuite.RunAll();
+        allPassed &= EngineTestSuite.RunAll();
 
         return allPassed;
     }

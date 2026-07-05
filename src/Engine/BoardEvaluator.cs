@@ -2,7 +2,7 @@ using ChessConsoleApp.Core;
 using ChessConsoleApp.Enums;
 using ChessConsoleApp.Models;
 
-namespace ChessConsoleApp.AI;
+namespace ChessConsoleApp.Engine;
 
 public static class BoardEvaluator
 {

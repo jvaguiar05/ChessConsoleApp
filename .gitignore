@@ -32,3 +32,6 @@ appsettings.Local.json
 ## Operating System overhead
 Thumbs.db
 .DS_Store
+
+## Engine executables
+engines/stockfish/*.exe

@@ -1,6 +1,6 @@
-using ChessConsoleApp.AI;
 using ChessConsoleApp.Core.Moves;
 using ChessConsoleApp.Core.State;
+using ChessConsoleApp.Engine;
 using ChessConsoleApp.Enums;
 using ChessConsoleApp.Models;
 using ChessConsoleApp.UI;

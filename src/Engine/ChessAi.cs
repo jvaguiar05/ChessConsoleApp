@@ -3,7 +3,7 @@ using ChessConsoleApp.Enums;
 using ChessConsoleApp.Models;
 using ChessConsoleApp.Models.Pieces;
 
-namespace ChessConsoleApp.AI;
+namespace ChessConsoleApp.Engine;
 
 public static class ChessAi
 {
