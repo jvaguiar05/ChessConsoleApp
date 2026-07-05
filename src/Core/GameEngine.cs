@@ -8,12 +8,7 @@ namespace ChessConsoleApp.Core;
 
 public class GameEngine
 {
-    private readonly Board _board = new();
-    private readonly List<Move> _moveHistory = new();
-    private PieceColor _currentTurn = PieceColor.White;
-    private GameState _state = GameState.Running;
-    private readonly Dictionary<string, int> _positionHistory = new();
-    private int _halfMoveClock = 0;
+    private readonly ChessGameState _gameState = new();
     private bool _isVsAI = false;
     private PieceColor _playerColor = PieceColor.White;
     private AiDifficulty _aiDifficulty = AiDifficulty.Intermediate;
@@ -25,10 +20,10 @@ public class GameEngine
 
     public GameEngine()
     {
-        _board.Initialize();
+        _gameState.Initialize();
 
         string initialSnapshot = GeneratePositionSnapshot();
-        _positionHistory[initialSnapshot] = 1;
+        _gameState.PositionHistory[initialSnapshot] = 1;
     }
 
     /// <summary>
@@ -36,31 +31,33 @@ public class GameEngine
     /// </summary>
     public void Start()
     {
-        while (_state == GameState.Running)
+        while (_gameState.State == GameState.Running)
         {
-            ConsoleRenderer.RenderBoard(_board, _moveHistory);
+            ConsoleRenderer.RenderBoard(_gameState.Board, _gameState.MoveHistory);
             EvaluateGameState();
 
-            if (_state != GameState.Running)
+            if (_gameState.State != GameState.Running)
                 continue;
 
-            Move? lastMove = _moveHistory.Count > 0 ? _moveHistory[^1] : null;
+            Move? lastMove = _gameState.MoveHistory.Count > 0 ? _gameState.MoveHistory[^1] : null;
 
-            if (_board.IsColorInCheck(_currentTurn, lastMove))
-                Console.WriteLine($"[!] ALERT: {_currentTurn} is currently in CHECK!");
+            if (_gameState.Board.IsColorInCheck(_gameState.CurrentTurn, lastMove))
+                Console.WriteLine($"[!] ALERT: {_gameState.CurrentTurn} is currently in CHECK!");
 
-            if (_isVsAI && _currentTurn != _playerColor)
+            if (_isVsAI && _gameState.CurrentTurn != _playerColor)
             {
                 ExecuteAiTurn();
                 continue; // Skips the human Console.ReadLine() and loops back to redraw the AI's move!
             }
 
-            Console.WriteLine($"{_currentTurn}'s turn. Enter move (e.g., 'e2 e4') or 'quit':");
+            Console.WriteLine(
+                $"{_gameState.CurrentTurn}'s turn. Enter move (e.g., 'e2 e4') or 'quit':"
+            );
             string input = Console.ReadLine()?.Trim().ToLower() ?? "";
 
             if (input == "quit")
             {
-                _state = GameState.Resigned;
+                _gameState.State = GameState.Resigned;
                 continue;
             }
 
@@ -68,13 +65,15 @@ public class GameEngine
         }
         // --- THE END PRESENTATION LAYER ---
         // Render the definitive final frame and break down conclusive outcomes via state layout mapping
-        ConsoleRenderer.RenderBoard(_board, _moveHistory);
+        ConsoleRenderer.RenderBoard(_gameState.Board, _gameState.MoveHistory);
 
-        switch (_state)
+        switch (_gameState.State)
         {
             case GameState.Checkmate:
                 PieceColor winner =
-                    _currentTurn == PieceColor.White ? PieceColor.Black : PieceColor.White;
+                    _gameState.CurrentTurn == PieceColor.White
+                        ? PieceColor.Black
+                        : PieceColor.White;
                 Console.WriteLine($"\n[!!!] CHECKMATE! {winner} wins the game!");
                 break;
             case GameState.Stalemate:
@@ -84,9 +83,11 @@ public class GameEngine
                 break;
             case GameState.Resigned:
                 PieceColor victor =
-                    _currentTurn == PieceColor.White ? PieceColor.Black : PieceColor.White;
+                    _gameState.CurrentTurn == PieceColor.White
+                        ? PieceColor.Black
+                        : PieceColor.White;
                 Console.WriteLine(
-                    $"\n[x] RESIGNATION! {_currentTurn} threw in the towel. {victor} wins the match!"
+                    $"\n[x] RESIGNATION! {_gameState.CurrentTurn} threw in the towel. {victor} wins the match!"
                 );
                 break;
             case GameState.DrawByFiftyMoveRule:
@@ -195,18 +196,11 @@ public class GameEngine
 
     private void ResetEngineState()
     {
-        _state = GameState.Running;
-        _currentTurn = PieceColor.White;
-        _moveHistory.Clear();
-        _positionHistory.Clear();
-        _halfMoveClock = 0;
-
-        // Re-initialize the internal board layout values
-        _board.Initialize();
+        _gameState.Initialize();
 
         // Log the fresh start configuration into the repetition dictionary
         string initialSnapshot = GeneratePositionSnapshot();
-        _positionHistory[initialSnapshot] = 1;
+        _gameState.PositionHistory[initialSnapshot] = 1;
     }
 
     private void SelectColorMenu()
@@ -236,7 +230,7 @@ public class GameEngine
 
         if (ExecuteMove(from, to))
         {
-            _currentTurn = _currentTurn == PieceColor.White ? PieceColor.Black : PieceColor.White;
+            _gameState.SwitchTurn();
 
             RegisterCurrentPosition();
         }
@@ -251,7 +245,7 @@ public class GameEngine
 
     private bool ExecuteMove(Position from, Position to)
     {
-        Piece? piece = _board[from];
+        Piece? piece = _gameState.Board[from];
 
         if (piece == null)
         {
@@ -259,9 +253,9 @@ public class GameEngine
             return false;
         }
 
-        if (piece.Color != _currentTurn)
+        if (piece.Color != _gameState.CurrentTurn)
         {
-            WriteDiagnostic($"Turn error: It is currently {_currentTurn}'s turn.");
+            WriteDiagnostic($"Turn error: It is currently {_gameState.CurrentTurn}'s turn.");
             return false;
         }
 
@@ -282,16 +276,16 @@ public class GameEngine
             return false;
         }
 
-        _moveHistory.Add(new Move(from, to, piece, targetCaptured));
-        _board.MovePiece(from, to);
+        _gameState.MoveHistory.Add(new Move(from, to, piece, targetCaptured));
+        _gameState.Board.MovePiece(from, to);
 
         if (piece is Pawn || targetCaptured != null)
-            _halfMoveClock = 0;
+            _gameState.HalfMoveClock = 0;
         else
-            _halfMoveClock++;
+            _gameState.HalfMoveClock++;
 
         if (isCastling && castlingRook != null)
-            _board.MovePiece(rookStartPos, rookTransitPos);
+            _gameState.Board.MovePiece(rookStartPos, rookTransitPos);
 
         if (piece is Pawn && (to.Row == 0 || to.Row == 7))
             HandlePromotion(to, piece.Color);
@@ -301,14 +295,14 @@ public class GameEngine
 
     private void ExecuteAiTurn()
     {
-        Console.WriteLine($"\n[CPU] Computer ({_currentTurn}) is thinking...");
+        Console.WriteLine($"\n[CPU] Computer ({_gameState.CurrentTurn}) is thinking...");
         System.Threading.Thread.Sleep(800);
 
         // Call out to the AI layer using clean out parameters
         if (
             ChessAi.GetBestMove(
-                _board,
-                _currentTurn,
+                _gameState.Board,
+                _gameState.CurrentTurn,
                 _aiDifficulty,
                 IsMoveLegal,
                 out Position from,
@@ -338,24 +332,24 @@ public class GameEngine
         out Piece? castlingRook
     )
     {
-        targetCaptured = _board[to];
+        targetCaptured = _gameState.Board[to];
         isEnPassant = false;
         isCastling = false;
         rookStartPos = default;
         rookTransitPos = default;
         castlingRook = null;
 
-        Piece? piece = _board[from];
-        if (piece == null || piece.Color != _currentTurn)
+        Piece? piece = _gameState.Board[from];
+        if (piece == null || piece.Color != _gameState.CurrentTurn)
             return false;
 
-        Move? lastMove = _moveHistory.Count > 0 ? _moveHistory[^1] : null;
-        if (!piece.IsValidMove(_board, to, lastMove))
+        Move? lastMove = _gameState.MoveHistory.Count > 0 ? _gameState.MoveHistory[^1] : null;
+        if (!piece.IsValidMove(_gameState.Board, to, lastMove))
             return false;
 
         isEnPassant = piece is Pawn && from.Column != to.Column && targetCaptured == null;
         Position enPassantVictimPos = new Position(from.Row, to.Column);
-        Piece? enPassantVictim = isEnPassant ? _board[enPassantVictimPos] : null;
+        Piece? enPassantVictim = isEnPassant ? _gameState.Board[enPassantVictimPos] : null;
         if (isEnPassant)
             targetCaptured = enPassantVictim;
 
@@ -363,47 +357,50 @@ public class GameEngine
 
         if (isCastling)
         {
-            if (piece.HasMoved(_moveHistory) || _board.IsColorInCheck(_currentTurn, lastMove))
+            if (
+                piece.HasMoved(_gameState.MoveHistory)
+                || _gameState.Board.IsColorInCheck(_gameState.CurrentTurn, lastMove)
+            )
                 return false;
 
             int rookStartCol = to.Column == 6 ? 7 : 0;
             int rookTransitCol = to.Column == 6 ? 5 : 3;
             rookStartPos = new Position(from.Row, rookStartCol);
             rookTransitPos = new Position(from.Row, rookTransitCol);
-            castlingRook = _board[rookStartPos];
+            castlingRook = _gameState.Board[rookStartPos];
 
-            if (castlingRook == null || castlingRook.HasMoved(_moveHistory))
+            if (castlingRook == null || castlingRook.HasMoved(_gameState.MoveHistory))
                 return false;
 
             int step = to.Column == 6 ? 1 : -1;
             Position transitPos = new Position(from.Row, from.Column + step);
-            _board[transitPos] = piece;
-            _board[from] = null;
+            _gameState.Board[transitPos] = piece;
+            _gameState.Board[from] = null;
             piece.SetPosition(transitPos);
 
-            bool transitInCheck = _board.IsColorInCheck(_currentTurn, lastMove);
+            bool transitInCheck = _gameState.Board.IsColorInCheck(_gameState.CurrentTurn, lastMove);
 
-            _board[from] = piece;
-            _board[transitPos] = null;
+            _gameState.Board[from] = piece;
+            _gameState.Board[transitPos] = null;
             piece.SetPosition(from);
 
             if (transitInCheck)
                 return false;
         }
 
-        _board[to] = piece;
-        _board[from] = null;
+        _gameState.Board[to] = piece;
+        _gameState.Board[from] = null;
         piece.SetPosition(to);
         if (isEnPassant)
-            _board[enPassantVictimPos] = null;
+            _gameState.Board[enPassantVictimPos] = null;
 
-        bool selfInCheck = _board.IsColorInCheck(_currentTurn, lastMove);
+        bool selfInCheck = _gameState.Board.IsColorInCheck(_gameState.CurrentTurn, lastMove);
 
-        _board[from] = piece;
-        _board[to] = isEnPassant ? null : targetCaptured;
+        _gameState.Board[from] = piece;
+        _gameState.Board[to] = isEnPassant ? null : targetCaptured;
         piece.SetPosition(from);
         if (isEnPassant)
-            _board[enPassantVictimPos] = enPassantVictim;
+            _gameState.Board[enPassantVictimPos] = enPassantVictim;
 
         return !selfInCheck;
     }
@@ -417,7 +414,7 @@ public class GameEngine
         {
             for (int c = 0; c < 8; c++)
             {
-                Piece? p = _board[new Position(r, c)];
+                Piece? p = _gameState.Board[new Position(r, c)];
                 if (p == null)
                     sb.Append('.');
                 else
@@ -432,7 +429,7 @@ public class GameEngine
         }
 
         // 2. Append active turn modifier to separate positions with different players moving next
-        sb.Append($"|{_currentTurn}");
+        sb.Append($"|{_gameState.CurrentTurn}");
 
         return sb.ToString();
     }
@@ -442,7 +439,7 @@ public class GameEngine
 #if DEBUG
         if (_promotionChoiceForTesting.HasValue)
         {
-            _board[position] = CreatePromotionPiece(
+            _gameState.Board[position] = CreatePromotionPiece(
                 _promotionChoiceForTesting.Value,
                 color,
                 position
@@ -460,7 +457,7 @@ public class GameEngine
         {
             string choice = Console.ReadLine()?.Trim().ToUpper() ?? "Q";
 
-            _board[position] = CreatePromotionPiece(choice[0], color, position);
+            _gameState.Board[position] = CreatePromotionPiece(choice[0], color, position);
 
             break;
         }
@@ -470,33 +467,40 @@ public class GameEngine
     {
         string snapshot = GeneratePositionSnapshot();
 
-        if (_positionHistory.TryGetValue(snapshot, out int count))
-            _positionHistory[snapshot] = count + 1;
+        if (_gameState.PositionHistory.TryGetValue(snapshot, out int count))
+            _gameState.PositionHistory[snapshot] = count + 1;
         else
-            _positionHistory[snapshot] = 1;
+            _gameState.PositionHistory[snapshot] = 1;
     }
 
     private GameState EvaluateGameState()
     {
-        Move? lastMove = _moveHistory.Count > 0 ? _moveHistory[^1] : null;
+        Move? lastMove = _gameState.MoveHistory.Count > 0 ? _gameState.MoveHistory[^1] : null;
 
-        if (_halfMoveClock >= 100)
-            return _state = GameState.DrawByFiftyMoveRule;
+        if (_gameState.HalfMoveClock >= 100)
+            return _gameState.State = GameState.DrawByFiftyMoveRule;
 
         string currentSnapshot = GeneratePositionSnapshot();
-        if (_positionHistory.TryGetValue(currentSnapshot, out int repCount) && repCount >= 3)
-            return _state = GameState.DrawByRepetition;
+        if (
+            _gameState.PositionHistory.TryGetValue(currentSnapshot, out int repCount)
+            && repCount >= 3
+        )
+            return _gameState.State = GameState.DrawByRepetition;
 
-        if (_board.HasInsufficientMaterial())
-            return _state = GameState.DrawByInsufficientMaterial;
+        if (_gameState.Board.HasInsufficientMaterial())
+            return _gameState.State = GameState.DrawByInsufficientMaterial;
 
-        bool inCheck = _board.IsColorInCheck(_currentTurn, lastMove);
-        bool hasMoves = _board.HasAnyLegalMoves(_currentTurn, lastMove, IsMoveLegal);
+        bool inCheck = _gameState.Board.IsColorInCheck(_gameState.CurrentTurn, lastMove);
+        bool hasMoves = _gameState.Board.HasAnyLegalMoves(
+            _gameState.CurrentTurn,
+            lastMove,
+            IsMoveLegal
+        );
 
         if (!hasMoves)
-            return _state = inCheck ? GameState.Checkmate : GameState.Stalemate;
+            return _gameState.State = inCheck ? GameState.Checkmate : GameState.Stalemate;
 
-        return _state;
+        return _gameState.State;
     }
 
     private static Piece CreatePromotionPiece(char choice, PieceColor color, Position position)
@@ -527,13 +531,13 @@ public class GameEngine
         return EvaluateGameState();
     }
 
-    public void SetHalfMoveClockForTesting(int value) => _halfMoveClock = value;
+    public void SetHalfMoveClockForTesting(int value) => _gameState.HalfMoveClock = value;
 
-    public Board BoardForTesting => _board;
+    public Board BoardForTesting => _gameState.Board;
 
     public GameState EvaluateGameStateForTesting() => EvaluateGameState();
 
-    public void SetCurrentTurnForTesting(PieceColor color) => _currentTurn = color;
+    public void SetCurrentTurnForTesting(PieceColor color) => _gameState.CurrentTurn = color;
 
     public void SuppressDiagnosticsForTesting() => _suppressDiagnostics = true;
 
