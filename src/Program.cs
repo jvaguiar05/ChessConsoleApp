@@ -15,8 +15,8 @@ public static class Program
             return;
         }
 
-        var engine = new GameEngine();
-        engine.ShowMainMenu();
+        using var gameEngine = new GameEngine();
+        gameEngine.ShowMainMenu();
     }
 
     private static void RunAutomatedTests()

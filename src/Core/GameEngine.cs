@@ -7,7 +7,7 @@ using ChessConsoleApp.UI;
 
 namespace ChessConsoleApp.Core;
 
-public class GameEngine
+public class GameEngine : IDisposable
 {
     private readonly GameSession _session = new();
     private readonly MoveValidator _moveValidator = new();
@@ -32,6 +32,12 @@ public class GameEngine
         _session.Initialize();
 
         PositionSnapshotService.RegisterCurrentPosition(_session);
+    }
+
+    public void Dispose()
+    {
+        _stockfishAi.Dispose();
+        GC.SuppressFinalize(this);
     }
 
     public void Start()
