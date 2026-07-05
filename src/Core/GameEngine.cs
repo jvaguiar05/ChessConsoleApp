@@ -8,8 +8,7 @@ namespace ChessConsoleApp.Core;
 
 public class GameEngine
 {
-    private readonly ChessGameState _gameState = new();
-    private readonly PositionSnapshotService _positionSnapshotService = new();
+    private readonly GameSession _gameState = new();
     private bool _isVsAI = false;
     private PieceColor _playerColor = PieceColor.White;
     private AiDifficulty _aiDifficulty = AiDifficulty.Intermediate;

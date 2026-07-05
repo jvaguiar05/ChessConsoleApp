@@ -3,7 +3,7 @@ using ChessConsoleApp.Models;
 
 namespace ChessConsoleApp.Core;
 
-public sealed class ChessGameState
+public sealed class GameSession
 {
     public Board Board { get; } = new();
     public List<Move> MoveHistory { get; } = new();

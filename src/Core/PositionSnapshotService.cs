@@ -7,7 +7,7 @@ namespace ChessConsoleApp.Core;
 
 public sealed class PositionSnapshotService
 {
-    public static string Generate(ChessGameState gameState)
+    public static string Generate(GameSession gameState)
     {
         var sb = new StringBuilder();
 
@@ -36,7 +36,7 @@ public sealed class PositionSnapshotService
         return sb.ToString();
     }
 
-    public static void RegisterCurrentPosition(ChessGameState gameState)
+    public static void RegisterCurrentPosition(GameSession gameState)
     {
         string snapshot = Generate(gameState);
 
