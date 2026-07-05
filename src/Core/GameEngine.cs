@@ -9,6 +9,7 @@ namespace ChessConsoleApp.Core;
 public class GameEngine
 {
     private readonly ChessGameState _gameState = new();
+    private readonly PositionSnapshotService _positionSnapshotService = new();
     private bool _isVsAI = false;
     private PieceColor _playerColor = PieceColor.White;
     private AiDifficulty _aiDifficulty = AiDifficulty.Intermediate;
@@ -22,8 +23,7 @@ public class GameEngine
     {
         _gameState.Initialize();
 
-        string initialSnapshot = GeneratePositionSnapshot();
-        _gameState.PositionHistory[initialSnapshot] = 1;
+        PositionSnapshotService.RegisterCurrentPosition(_gameState);
     }
 
     /// <summary>
@@ -198,9 +198,7 @@ public class GameEngine
     {
         _gameState.Initialize();
 
-        // Log the fresh start configuration into the repetition dictionary
-        string initialSnapshot = GeneratePositionSnapshot();
-        _gameState.PositionHistory[initialSnapshot] = 1;
+        PositionSnapshotService.RegisterCurrentPosition(_gameState);
     }
 
     private void SelectColorMenu()
@@ -232,7 +230,7 @@ public class GameEngine
         {
             _gameState.SwitchTurn();
 
-            RegisterCurrentPosition();
+            PositionSnapshotService.RegisterCurrentPosition(_gameState);
         }
         else
         {
@@ -405,35 +403,6 @@ public class GameEngine
         return !selfInCheck;
     }
 
-    private string GeneratePositionSnapshot()
-    {
-        var sb = new System.Text.StringBuilder();
-
-        // 1. Map piece positions across the entire grid
-        for (int r = 0; r < 8; r++)
-        {
-            for (int c = 0; c < 8; c++)
-            {
-                Piece? p = _gameState.Board[new Position(r, c)];
-                if (p == null)
-                    sb.Append('.');
-                else
-                {
-                    // White pieces are UPPERCASE, Black pieces are lowercase
-                    char symbol = p is Knight ? 'N' : p.GetType().Name[0];
-                    sb.Append(
-                        p.Color == PieceColor.White ? char.ToUpper(symbol) : char.ToLower(symbol)
-                    );
-                }
-            }
-        }
-
-        // 2. Append active turn modifier to separate positions with different players moving next
-        sb.Append($"|{_gameState.CurrentTurn}");
-
-        return sb.ToString();
-    }
-
     private void HandlePromotion(Position position, PieceColor color)
     {
 #if DEBUG
@@ -463,16 +432,6 @@ public class GameEngine
         }
     }
 
-    private void RegisterCurrentPosition()
-    {
-        string snapshot = GeneratePositionSnapshot();
-
-        if (_gameState.PositionHistory.TryGetValue(snapshot, out int count))
-            _gameState.PositionHistory[snapshot] = count + 1;
-        else
-            _gameState.PositionHistory[snapshot] = 1;
-    }
-
     private GameState EvaluateGameState()
     {
         Move? lastMove = _gameState.MoveHistory.Count > 0 ? _gameState.MoveHistory[^1] : null;
@@ -480,7 +439,7 @@ public class GameEngine
         if (_gameState.HalfMoveClock >= 100)
             return _gameState.State = GameState.DrawByFiftyMoveRule;
 
-        string currentSnapshot = GeneratePositionSnapshot();
+        string currentSnapshot = PositionSnapshotService.Generate(_gameState);
         if (
             _gameState.PositionHistory.TryGetValue(currentSnapshot, out int repCount)
             && repCount >= 3
