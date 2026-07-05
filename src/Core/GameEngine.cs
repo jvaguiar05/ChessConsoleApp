@@ -12,6 +12,7 @@ public class GameEngine
 {
     private readonly GameSession _session = new();
     private readonly MoveValidator _moveValidator = new();
+    private readonly GameMenu _gameMenu = new();
     private readonly MoveExecutor _moveExecutor;
     private readonly GameStateEvaluator _gameStateEvaluator;
     private bool _isVsAI = false;
@@ -120,81 +121,29 @@ public class GameEngine
     {
         while (true)
         {
-            Console.Clear();
-            Console.WriteLine("========================================");
-            Console.WriteLine("       CONSOLE CHESS CHAMPIONSHIP       ");
-            Console.WriteLine("========================================");
-            Console.WriteLine(" 1. Play Local Pass-and-Play (2P)");
-            Console.WriteLine(" 2. Play vs Computer (AI)");
-            Console.WriteLine(" 3. Exit Game");
-            Console.Write("\nSelect an option: ");
+            MainMenuOption option = _gameMenu.ShowMainMenu();
 
-            string choice = Console.ReadLine() ?? "";
-            if (choice == "1")
+            if (option == MainMenuOption.PlayLocal)
             {
                 ResetEngineState();
                 _isVsAI = false;
                 Start();
-                // Removed break; -> control returns here when game ends, looping back to menu!
             }
-            else if (choice == "2")
+            else if (option == MainMenuOption.PlayVsComputer)
             {
                 ResetEngineState();
                 _isVsAI = true;
-                SelectDifficultyMenu();
+
+                _aiDifficulty = _gameMenu.SelectDifficulty();
+                _playerColor = _gameMenu.SelectPlayerColor();
+
+                Start();
             }
-            else if (choice == "3")
+            else if (option == MainMenuOption.Exit)
             {
-                return; // Expressly exits the application loop entirely
+                return;
             }
         }
-    }
-
-    private void SelectDifficultyMenu()
-    {
-        while (true)
-        {
-            Console.Clear();
-            Console.WriteLine("========================================");
-            Console.WriteLine("       SELECT COMPUTER DIFFICULTY       ");
-            Console.WriteLine("========================================");
-            Console.WriteLine(" 1. Beginner     (600 Elo)");
-            Console.WriteLine(" 2. Intermediate (1200 Elo)");
-            Console.WriteLine(" 3. Advanced     (1600 Elo)");
-            Console.WriteLine(" 4. Master       (2000 Elo)");
-            Console.WriteLine(" 5. Grandmaster  (2500+ Elo)");
-            Console.Write("\nSelect your opponent: ");
-
-            string choice = Console.ReadLine() ?? "";
-            if (choice == "1")
-            {
-                _aiDifficulty = AiDifficulty.Beginner;
-                break;
-            }
-            if (choice == "2")
-            {
-                _aiDifficulty = AiDifficulty.Intermediate;
-                break;
-            }
-            if (choice == "3")
-            {
-                _aiDifficulty = AiDifficulty.Advanced;
-                break;
-            }
-            if (choice == "4")
-            {
-                _aiDifficulty = AiDifficulty.Master;
-                break;
-            }
-            if (choice == "5")
-            {
-                _aiDifficulty = AiDifficulty.Grandmaster;
-                break;
-            }
-        }
-
-        // Advance to the color selection screen
-        SelectColorMenu();
     }
 
     private void ResetEngineState()
@@ -202,19 +151,6 @@ public class GameEngine
         _session.Initialize();
 
         PositionSnapshotService.RegisterCurrentPosition(_session);
-    }
-
-    private void SelectColorMenu()
-    {
-        Console.Clear();
-        Console.WriteLine("=== SELECT YOUR COLOR ===");
-        Console.WriteLine(" 1. White (Moves First)");
-        Console.WriteLine(" 2. Black");
-        Console.Write("\nSelect an option: ");
-
-        string choice = Console.ReadLine() ?? "";
-        _playerColor = choice == "2" ? PieceColor.Black : PieceColor.White;
-        Start();
     }
 
     private void ProcessMoveInput(string input)
