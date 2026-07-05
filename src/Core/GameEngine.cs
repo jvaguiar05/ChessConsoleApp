@@ -151,7 +151,11 @@ public class GameEngine : IDisposable
         }
 
         if (result.RequiresPromotion && result.MovedPiece != null)
-            HandlePromotion(result.PromotionPosition, result.MovedPiece.Color);
+        {
+            char? aiPromotionChoice = IsAiTurn() ? _stockfishAi.LastPromotionChoice : null;
+
+            HandlePromotion(result.PromotionPosition, result.MovedPiece.Color, aiPromotionChoice);
+        }
 
         return true;
     }
@@ -171,11 +175,23 @@ public class GameEngine : IDisposable
             WriteDiagnostic("[CPU] No legal moves available for AI.");
     }
 
+    private bool IsAiTurn() => _isVsAI && _session.CurrentTurn != _playerColor;
+
     private bool IsMoveLegal(Position from, Position to) =>
         _moveValidator.IsLegal(_session, from, to);
 
-    private void HandlePromotion(Position position, PieceColor color)
+    private void HandlePromotion(Position position, PieceColor color, char? forcedChoice = null)
     {
+        if (forcedChoice.HasValue)
+        {
+            _session.Board[position] = PromotionPieceFactory.Create(
+                forcedChoice.Value,
+                color,
+                position
+            );
+            return;
+        }
+
 #if DEBUG
         if (_promotionChoiceForTesting.HasValue)
         {
